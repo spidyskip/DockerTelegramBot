@@ -7,12 +7,21 @@ import datetime # Library that we will need to get the day and time, # pip insta
 
 
 #### Access credentials
-config = configparser.ConfigParser() # Define the method to read the configuration file
-config.read('config.ini') # read config.ini file
+#config = configparser.ConfigParser() # Define the method to read the configuration file
+#config.read('config.ini') # read config.ini file
+#
+#api_id = config.get('default','api_id') # get the api id
+#api_hash = config.get('default','api_hash') # get the api hash
+#BOT_TOKEN = config.get('default','BOT_TOKEN') # get the bot token
 
-api_id = config.get('default','api_id') # get the api id
-api_hash = config.get('default','api_hash') # get the api hash
-BOT_TOKEN = config.get('default','BOT_TOKEN') # get the bot token
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+api_id = os.getenv('API_ID')
+api_hash = os.getenv('API_HASH')
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 # Create the client and the session called session_master. We start the session as the Bot (using bot_token)
 client = TelegramClient('sessions/session_master', api_id, api_hash).start(bot_token=BOT_TOKEN)
@@ -23,6 +32,15 @@ async def start(event):
     sender = await event.get_sender()
     SENDER = sender.id
     text = "Docker Bot 🤖 ready\nHello! I'm answering you from Docker!"
+    await client.send_message(SENDER, text, parse_mode="HTML")
+
+### First command, get the time and day
+@client.on(events.NewMessage(pattern='/(?i)hello')) 
+async def time(event):
+    # Get the sender of the message
+    sender = await event.get_sender()
+    SENDER = sender.id
+    text = "Hello".format(sender.first_name)
     await client.send_message(SENDER, text, parse_mode="HTML")
 
 
