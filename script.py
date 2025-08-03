@@ -47,6 +47,14 @@ async def time(event):
     text = "Hello".format(sender.first_name)
     await client.send_message(SENDER, text, parse_mode="HTML")
 
+@client.on(events.NewMessage(pattern='/(?i)sender')) 
+async def time(event):
+    # Get the sender of the message
+    sender = await event.get_sender()
+    SENDER = sender.id
+    text = f"{SENDER} - {sender.first_name} {sender.last_name} ({sender.username})"
+    await client.send_message(SENDER, text, parse_mode="HTML")
+
 ### First command, get the time and day
 @client.on(events.NewMessage(pattern='/(?i)time')) 
 async def time(event):
@@ -61,6 +69,10 @@ async def time(event):
 async def chat_with_api(event):
     sender = await event.get_sender()
     SENDER = sender.id
+
+    if str(SENDER) not in os.getenv('ALLOWED_USERS', '').split(','):
+        await event.respond("You are not allowed to use this bot.")
+        return
 
     # Extract the query part from the message
     query = event.pattern_match.group(1)
