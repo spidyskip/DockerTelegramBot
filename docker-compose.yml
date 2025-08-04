@@ -1,4 +1,105 @@
-version: '3'
+version: '3.8'
+name: minoltatelegrambot
 services:
-  telbot:
-    image: dockerbot:latest
+  minoltatelegrambot:
+    cap_add:
+      - AUDIT_WRITE
+      - CHOWN
+      - DAC_OVERRIDE
+      - FOWNER
+      - FSETID
+      - KILL
+      - MKNOD
+      - NET_BIND_SERVICE
+      - NET_RAW
+      - SETFCAP
+      - SETGID
+      - SETPCAP
+      - SETUID
+      - SYS_CHROOT
+    cpu_shares: 90
+    command:
+      - /bin/sh
+      - -c
+      - python script.py
+    container_name: MinoltaBot
+    deploy:
+      resources:
+        limits:
+          memory: 16215M
+    environment:
+      - API_ID=API_ID
+      - API_HASH=API_HASH
+      - BOT_TOKEN=BOT_TOKEN
+      - API_URL=API_URL
+      - ALLOWED_USERS=0000000
+      - GPG_KEY=E3FF2839C048B25C084DEBE9B26995E310250568
+      - LANG=C.UTF-8
+      - PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - PYTHON_GET_PIP_SHA256=96461deced5c2a487ddc65207ec5a9cffeca0d34e7af7ea1afc470ff0d746207
+      - PYTHON_GET_PIP_URL=https://github.com/pypa/get-pip/raw/0d8570dc44796f4369b652222cf176b3db6ac70e/public/get-pip.py
+      - PYTHON_PIP_VERSION=22.0.4
+      - PYTHON_SETUPTOOLS_VERSION=58.1.0
+      - PYTHON_VERSION=3.9.16
+    hostname: MinoltaBot
+    image: ghcr.io/spidyskip/dockertelegrambot/dockerbot:latest
+    restart: unless-stopped
+    x-casaos:
+      envs:
+        - container: PATH
+          description:
+            en_us: ""
+        - container: LANG
+          description:
+            en_us: ""
+        - container: GPG_KEY
+          description:
+            en_us: ""
+        - container: PYTHON_VERSION
+          description:
+            en_us: ""
+        - container: PYTHON_PIP_VERSION
+          description:
+            en_us: ""
+        - container: PYTHON_SETUPTOOLS_VERSION
+          description:
+            en_us: ""
+        - container: PYTHON_GET_PIP_URL
+          description:
+            en_us: ""
+        - container: PYTHON_GET_PIP_SHA256
+          description:
+            en_us: ""
+      image: ""
+    ports: []
+    volumes: []
+    devices: []
+    network_mode: bridge
+    privileged: false
+x-casaos:
+  architectures:
+    - arm64
+  author: CasaOS User
+  category: unknown
+  description:
+    en_us: ""
+  developer: unknown
+  hostname: ""
+  icon: ""
+  image: null
+  index: /
+  is_uncontrolled: false
+  main: minoltatelegrambot
+  port_map: ""
+  scheme: http
+  store_app_id: minoltatelegrambot
+  tagline:
+    en_us: This is a compose app converted from a legacy app (CasaOS v0.4.3 or
+      earlier)
+  thumbnail: ""
+  tips:
+    custom: This is a compose app converted from a legacy app (CasaOS v0.4.3 or
+      earlier)
+  title:
+    custom: ""
+    en_us: MinoltaTelegramBot

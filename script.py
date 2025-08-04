@@ -44,7 +44,7 @@ async def time(event):
     # Get the sender of the message
     sender = await event.get_sender()
     SENDER = sender.id
-    text = "Hello".format(sender.first_name)
+    text = f"Hi {sender.username}!"
     await client.send_message(SENDER, text, parse_mode="HTML")
 
 @client.on(events.NewMessage(pattern='/(?i)sender')) 
