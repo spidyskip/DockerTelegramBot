@@ -83,6 +83,7 @@ async def chat_with_api(event):
     payload = {
         "query": query,
         "agent_id": "general-agent",
+        "thread_id": str(SENDER),
         "user_id": str(SENDER),
         "include_history": True
     }
