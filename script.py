@@ -25,13 +25,14 @@ load_dotenv()
 api_id = os.getenv('API_ID')
 api_hash = os.getenv('API_HASH')
 BOT_TOKEN = os.getenv('BOT_TOKEN')
-API_URL= os.getenv('API_URL')
+API_URL = os.getenv('API_URL')
+ALLOWED_USERS = os.getenv('ALLOWED_USERS', '').split(',')
 
 # Create the client and the session called session_master. We start the session as the Bot (using bot_token)
 client = TelegramClient('sessions/session_master', api_id, api_hash).start(bot_token=BOT_TOKEN)
 
 # Define the /start command
-@client.on(events.NewMessage(pattern='/(?i)start')) 
+@client.on(events.NewMessage(pattern='(?i)^/start'))
 async def start(event):
     sender = await event.get_sender()
     SENDER = sender.id
@@ -39,7 +40,7 @@ async def start(event):
     await client.send_message(SENDER, text, parse_mode="HTML")
 
 ### First command, get the time and day
-@client.on(events.NewMessage(pattern='/(?i)hello')) 
+@client.on(events.NewMessage(pattern='(?i)^/hello')) 
 async def time(event):
     # Get the sender of the message
     sender = await event.get_sender()
@@ -47,7 +48,7 @@ async def time(event):
     text = f"Hi {sender.username}!"
     await client.send_message(SENDER, text, parse_mode="HTML")
 
-@client.on(events.NewMessage(pattern='/(?i)sender')) 
+@client.on(events.NewMessage(pattern='(?i)^/sender')) 
 async def time(event):
     # Get the sender of the message
     sender = await event.get_sender()
@@ -56,7 +57,7 @@ async def time(event):
     await client.send_message(SENDER, text, parse_mode="HTML")
 
 ### First command, get the time and day
-@client.on(events.NewMessage(pattern='/(?i)time')) 
+@client.on(events.NewMessage(pattern='(?i)^/time')) 
 async def time(event):
     # Get the sender of the message
     sender = await event.get_sender()
@@ -65,7 +66,7 @@ async def time(event):
     await client.send_message(SENDER, text, parse_mode="HTML")
 
 # Match /chat followed by any text (the query)
-@client.on(events.NewMessage(pattern=r'/chat\s+(.+)', func=lambda e: e.is_private))
+@client.on(events.NewMessage(pattern=r'/chat_with\s+(.+)', func=lambda e: e.is_private))
 async def chat_with_api(event):
     sender = await event.get_sender()
     SENDER = sender.id
@@ -106,6 +107,83 @@ async def chat_with_api(event):
 
     await client.send_message(SENDER, result, parse_mode="HTML")
 
+active_chat_users = set() 
+# Enter chat mode
+@client.on(events.NewMessage(pattern=r'(?i)^/chat$'))
+async def start_chat(event):
+    sender = await event.get_sender()
+    user_id = sender.id
+    api_url = API_URL
+    if str(user_id) not in os.getenv('ALLOWED_USERS', '').split(','):
+        await event.respond("You are not allowed to use this bot.")
+        return
+    else:
+        headers = {"Content-Type": "application/json"}
+        api_url = api_url.split("/chat")[0] + "/health"  # Ensure the API URL is correct
+
+        def ping():
+            try:
+                response = requests.get(api_url, json={}, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    data = response.json()
+                    if data.get("status") == "healthy":
+                        active_chat_users.add(user_id)   
+                        return "✅ Backend ready"
+                    else:
+                        return f"⚠️ Backend status: {data.get('status', 'unknown')}"
+                else:
+                    return f"❌ API error {response.status_code}: {response.text}"
+            except Exception as e:
+                return f"❗ Request failed: {str(e)}"
+
+        # Example use:
+        result = ping()
+        await event.reply(f"{result}. Type /exit to stop.") 
+
+# Exit chat mode
+@client.on(events.NewMessage(pattern=r'(?i)^/exit$'))
+async def exit_chat(event):
+    sender = await event.get_sender()
+    user_id = sender.id
+    active_chat_users.discard(user_id)
+    await event.reply("👋 Chat ended. Type /chat to start again.")
+
+# Handle messages in chat mode
+@client.on(events.NewMessage)
+async def handle_chat(event):
+    sender = await event.get_sender()
+    user_id = sender.id
+
+    if user_id not in active_chat_users:
+        return
+
+    message_text = event.raw_text.strip()
+    payload = {
+        "query": message_text,
+        "agent_id": "general-agent",
+        "thread_id": str(user_id),
+        "user_id": str(user_id),
+        "include_history": True
+    }
+    headers = {"Content-Type": "application/json"} 
+
+    # Define blocking API request
+    def query_llm():
+        try:
+            response = requests.post(API_URL, json=payload, headers=headers, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                return data.get("response", "⚠️ No 'response' field.")
+            else:
+                return f"❌ API error {response.status_code}: {response.text}"
+        except Exception as e:
+            return f"❗ Request failed: {str(e)}"
+
+    # Run blocking request asynchronously
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, query_llm)
+
+    await event.respond(result)
 
 ### MAIN
 if __name__ == '__main__':
